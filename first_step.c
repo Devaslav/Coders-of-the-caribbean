@@ -90,17 +90,20 @@ int Get_Action(SHIP *Ships, int ID, BARREL *Barrels, int Bar_Cnt)
  **/
 int main()
 {
-	Ships = (SHIP *)calloc(100, sizeof(SHIP)); // Max my ships == 1
+	int my_ships_cnt = 0;
+	int en_ships_cnt = 0;
+	int barrel_cnt = 0;
 
+	Ships = (SHIP *)calloc(100, sizeof(SHIP)); // Max my ships == 1
     // game loop
-    while (1) {
+    while (1)
+	{
+		my_ships_cnt = 0;
+		en_ships_cnt = 0;
+		barrel_cnt = 0;
+
         static int myShipCount; // the number of remaining ships
         scanf("%d", &myShipCount);
-		
-		int my_ships_cnt=0;
-		int en_ships_cnt=0;
-
-		int barrel_cnt = 0;
 
         int entityCount; // the number of entities (e.g. ships, mines or cannonballs)
         scanf("%d", &entityCount);
@@ -131,7 +134,8 @@ int main()
 
 				my_ships_cnt++;
 			}
-			else
+
+
 			if (strcmp(entityType, "BARREL") == 0) // init Barrel
 			{
 				Barrels[barrel_cnt].id = i;
@@ -150,13 +154,17 @@ int main()
 		{
             // Write an action using printf(). DON'T FORGET THE TRAILING \n
             // To debug: fprintf(stderr, "Debug messages...\n");
-			int Bar_ID;
-			Bar_ID = Get_Action(Ships, i, Barrels, barrel_cnt);
+			// Any valid action, such as "WAIT" or "MOVE x y"		
 			
-			if (barrel_cnt > 0) 
-            printf("MOVE %d %d\n", Barrels[Bar_ID].x, Barrels[Bar_ID].y); // Any valid action, such as "WAIT" or "MOVE x y"
-			else  printf("WAIT");
+			if (barrel_cnt > 0)
+			{
+				int Bar_ID;
 
+				Bar_ID = Get_Action(Ships, i, Barrels, barrel_cnt);
+				printf("MOVE %d %d\n", Barrels[Bar_ID].x, Barrels[Bar_ID].y); 
+			}
+			else  printf("WAIT\n");
+			 
         }
 
 		//free(Ships);
