@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\first_step.c">
+    <ClCompile Include="first_step.c">
       <Filter>Resource Files</Filter>
     </ClCompile>
   </ItemGroup>
