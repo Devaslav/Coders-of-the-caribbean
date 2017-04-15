@@ -42,7 +42,7 @@ typedef struct
 	int x;
 	int y;
 	Actions Act;
-};
+} ACTION;
 
 
 BARREL Barrels[100];
