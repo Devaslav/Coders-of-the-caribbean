@@ -70,6 +70,9 @@ typedef struct
 	int y1;
 	int x2;
 	int y2;
+	float cx;
+	float cy;
+	int valid; // 1 - valid, 0-???,-1 - invalid
 } SQUARE;
 
 ////////////////////////
@@ -78,7 +81,8 @@ SHIP My_Ships[3];
 SHIP En_Ships[3];
 _MINE_ Mines[100];
 
-SQUARE SQRS[(20 / 2) * (22 / 2)];
+#define N_SQR 110//(20 / 2) * (22 / 2)
+SQUARE SQRS[N_SQR];
 
 //////////////////////////////////////////////////////////////////////////
 // MACROSES
@@ -97,43 +101,115 @@ void GET_SQRS(void)
 			SQRS[j * 11 + i].x1 = i * 2;
 			SQRS[j * 11 + i].x2 = i * 2 + 1;
 			SQRS[j * 11 + i].y1 = j * 2;
-			SQRS[j * 11 + i].x2 = j * 2 + 1;
+			SQRS[j * 11 + i].y2 = j * 2 + 1;
+			SQRS[j * 11 + i].cx = (SQRS[j * 11 + i].x1 + SQRS[j * 11 + i].x2) / 2.0;
+			SQRS[j * 11 + i].cy = (SQRS[j * 11 + i].y1 + SQRS[j * 11 + i].y2) / 2.0;
+
+			SQRS[j * 11 + i].valid = 1;
 		}
 }
 //////////////////////////////////////////////////////////////////////////
-char IN_SQRS(SQUARE SQR, int x, int y)
+char IN_SQR(SQUARE SQR, int x, int y)
 {
 	if (x >= SQR.x1 && x <= SQR.x2 && y >= SQR.y1 && y <= SQR.y2)
 		return TRUE;
 	else
 		return FALSE;
 }
+//////////////////////////////////////////////////////////////////////////
+void VAL_SQRS(_MINE_ *Mines, int m_cnt, SHIP My_Ship, SHIP En_Ship)
+{
+	int i,j;
+
+	for (i = 0;i < N_SQR;i++)
+	{
+		if(SQRS[i].valid != 0) SQRS[i].valid = 1;
+	}
+
+	for(i=0;i<m_cnt;i++)
+		for (j = 0;j < N_SQR;j++)
+		{
+			if (IN_SQR(SQRS[j], Mines[i].x, Mines[i].y) == TRUE ) SQRS[j].valid = -1;
+		}
+	 
+		for (j = 0;j < N_SQR;j++)
+		{
+			if (IN_SQR(SQRS[j], My_Ship.x, My_Ship.y) == TRUE ) SQRS[j].valid = 0;
+			if (IN_SQR(SQRS[j], En_Ship.x, En_Ship.y) == TRUE) SQRS[j].valid = -2;
+		}
+
+		for (i = 0;i < N_SQR;i++)
+		{
+			//fprintf(stderr, "SQR[%d].x1 == %d\n", i, SQRS[i].x1);
+			//fprintf(stderr, "SQR[%d].x2 == %d\n", i, SQRS[i].x2);
+			//fprintf(stderr, "SQR[%d].y1 == %d\n", i, SQRS[i].y1);
+			//fprintf(stderr, "SQR[%d].y2 == %d\n", i, SQRS[i].y2);
+			//fprintf(stderr, "SQR[%d].cx == %f\n", i, SQRS[i].cx);
+			//fprintf(stderr, "SQR[%d].cy == %f\n", i, SQRS[i].cy);
+			//fprintf(stderr, "SQR[%d].valid == %d\n", i, SQRS[i].valid);
+		}
+}
 
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
-ACTION Get_Action(SHIP *Ships, int ID, BARREL *Barrels, int Bar_Cnt)
+ACTION Get_Action(SHIP *My_Ships, int ID, SHIP *En_Ships, int En_ID,  BARREL *Barrels, int Bar_Cnt)
 {
 	double Dist;
 	ACTION ACT;
+	int i;
 
+	//fprintf(stderr, "Bar_Cnt = %d\n", Bar_Cnt);
+	if (GET_DIST(My_Ships[ID].x, My_Ships[ID].y, En_Ships[En_ID].x, En_Ships[En_ID].y) < 4.0)
+	{
+		ACT.action = FIRE;
+		ACT.x = En_Ships[En_ID].x;
+		ACT.y = En_Ships[En_ID].y; 
+	}
+	else
 	if (Bar_Cnt > 0)
 	{
 		ACT.action = MOVE;
 		ACT.x = Barrels[0].x;
 		ACT.y = Barrels[0].y;
-		Dist = GET_DIST(Ships[ID].x, Ships[ID].y, Barrels[0].x, Barrels[0].y);
+		Dist = GET_DIST(My_Ships[ID].x, My_Ships[ID].y, Barrels[0].x, Barrels[0].y);
 
-		for (int i = 0; i < Bar_Cnt; i++)
+		for (i = 0; i < Bar_Cnt; i++)
 		{
-			if (GET_DIST(Ships[ID].x, Ships[ID].y, Barrels[i].x, Barrels[i].y) < Dist)
+			if (GET_DIST(My_Ships[ID].x, My_Ships[ID].y, Barrels[i].x, Barrels[i].y) < Dist)
 			{
-				Dist = GET_DIST(Ships[ID].x, Ships[ID].y, Barrels[i].x, Barrels[i].y);
+				Dist = GET_DIST(My_Ships[ID].x, My_Ships[ID].y, Barrels[i].x, Barrels[i].y);
 				ACT.x = Barrels[i].x;
 				ACT.y = Barrels[i].y;
+
+				fprintf(stderr, "TRG_BAR==%d\n", i);
 			}
 		}
+	}
+	else
+	if(Bar_Cnt == 0)
+	{
+		fprintf(stderr, "Bar_Cnt = 000\n", Bar_Cnt);
+		ACT.action = MOVE;
+		//ACT.x = SQRS[0].cx;
+		//ACT.y = SQRS[0].cy;
+		//Dist = GET_DIST(Ships[ID].x, Ships[ID].y, SQRS[0].cx, SQRS[0].cy);
+		Dist = 10000.0;
+		
+		for (i = 0; i < 110; i++)
+		{
+			if ( (GET_DIST(My_Ships[ID].x, My_Ships[ID].y, SQRS[i].cx, SQRS[i].cy) < Dist) 
+				&& SQRS[i].valid == 1 )
+			{
+				fprintf(stderr, "TRG_SQR==%d\n", i);
 
+				Dist = GET_DIST(My_Ships[ID].x, My_Ships[ID].y, SQRS[i].cx, SQRS[i].cy);
+				ACT.x = SQRS[i].cx;
+				ACT.y = SQRS[i].cy;
+
+				
+			}
+		}
 		
 	}
 	else
@@ -236,8 +312,8 @@ int main()
 				Barrels[barrel_cnt].y = y;
 				Barrels[barrel_cnt].value = arg1;
 
-				fprintf(stderr, "BARREL %d: X=%d, Y=%d, VALUE=%d\n", i,
-					Barrels[barrel_cnt].x, Barrels[barrel_cnt].y, Barrels[barrel_cnt].value);
+				//fprintf(stderr, "BARREL %d: X=%d, Y=%d, VALUE=%d\n", i,
+				//	Barrels[barrel_cnt].x, Barrels[barrel_cnt].y, Barrels[barrel_cnt].value);
 
 				barrel_cnt++;
 			}
@@ -260,11 +336,13 @@ int main()
             // Write an action using printf(). DON'T FORGET THE TRAILING \n
             // To debug: fprintf(stderr, "Debug messages...\n");
 			// Any valid action, such as "WAIT" or "MOVE x y"		
-			
+			VAL_SQRS(Mines, mine_cnt, My_Ships[i], En_Ships[0]);
 
-			New_Act = Get_Action(My_Ships, My_Ships[i].id, Barrels, barrel_cnt);
+			New_Act = Get_Action(My_Ships, My_Ships[i].id, En_Ships, 0, Barrels, barrel_cnt);
 
-			if (New_Act.action == MOVE )	
+			if (New_Act.action == FIRE)
+				printf("FIRE %d %d\n", New_Act.x, New_Act.y);
+			else if (New_Act.action == MOVE )	
 				printf("MOVE %d %d\n", New_Act.x, New_Act.y);
 			else  printf("WAIT\n");
 			 
