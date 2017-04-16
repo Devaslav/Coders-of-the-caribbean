@@ -1,5 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 
+#define TRUE 1
+#define FALSE 0
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -8,16 +10,16 @@
 #include <math.h>
 
 ///////////////////////////////////////////////////////////////////////////
-// VARS
+// VARS AND STRUCTS
 typedef struct 
 {
 	int id;
 	int x; // 0-22
 	int y; // 0-20
-	int spd; // speed
-	int dir; // orientation, direction
-	int rum; // value of rum units
-	int owner; // 1-I ,0-Enemy
+	int dir; // the ship's rotation orientation (between 0 and 5)
+	int spd; // the ship's speed (between 0 and 2)
+	int rum; // the ship's stock of rum units
+	int owner; // 1 if the ship is controlled by you, 0 otherwise 
 
 } SHIP;
 
@@ -29,6 +31,22 @@ typedef struct
 	int value; // value of rum units(10-26)
 
 } BARREL;
+
+typedef struct
+{
+	int id;
+	int x; // 0-22
+	int y; // 0-20
+	int owner; // the entityId of the ship that fired this cannon ball
+	int turns; // number of turns before impact (1 means the cannon ball will land at the end of the current turn)
+} CANNONBALL;
+
+typedef struct
+{
+	int id;
+	int x; // 0-22
+	int y; // 0-20
+} _MINE_;
 
 typedef enum
 {
@@ -46,11 +64,21 @@ typedef struct
 	Actions action;
 } ACTION;
 
+typedef struct
+{
+	int x1;
+	int y1;
+	int x2;
+	int y2;
+} SQUARE;
+
 ////////////////////////
 BARREL Barrels[100];
 SHIP My_Ships[3];
 SHIP En_Ships[3];
+_MINE_ Mines[100];
 
+SQUARE SQRS[(20 / 2) * (22 / 2)];
 
 //////////////////////////////////////////////////////////////////////////
 // MACROSES
@@ -58,6 +86,32 @@ SHIP En_Ships[3];
 
 //////////////////////////////////////////////////////////////////////////
 // FUNCTIONS
+//////////////////////////////////////////////////////////////////////////
+void GET_SQRS(void)
+{
+	int i,j;
+
+	for(j=0;j<=10;j++)
+		for (i = 0;i <= 11;i++)
+		{
+			SQRS[j * 11 + i].x1 = i * 2;
+			SQRS[j * 11 + i].x2 = i * 2 + 1;
+			SQRS[j * 11 + i].y1 = j * 2;
+			SQRS[j * 11 + i].x2 = j * 2 + 1;
+		}
+}
+//////////////////////////////////////////////////////////////////////////
+char IN_SQRS(SQUARE SQR, int x, int y)
+{
+	if (x >= SQR.x1 && x <= SQR.x2 && y >= SQR.y1 && y <= SQR.y2)
+		return TRUE;
+	else
+		return FALSE;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 ACTION Get_Action(SHIP *Ships, int ID, BARREL *Barrels, int Bar_Cnt)
 {
 	double Dist;
@@ -109,8 +163,11 @@ int main()
 	int my_ships_cnt = 0;
 	int en_ships_cnt = 0;
 	int barrel_cnt = 0;
+	int mine_cnt = 0;
+	int core_cnt = 0;
 
 	ACTION New_Act;
+	GET_SQRS();
 
 	//Ships = (SHIP *)calloc(100, sizeof(SHIP)); // Max my ships == 1
     // game loop
@@ -119,6 +176,8 @@ int main()
 		my_ships_cnt = 0;
 		en_ships_cnt = 0;
 		barrel_cnt = 0;
+		mine_cnt = 0;
+		core_cnt = 0;
 
         static int myShipCount; // the number of remaining ships
         scanf("%d", &myShipCount);
@@ -170,7 +229,6 @@ int main()
 				en_ships_cnt++;
 			}
 
-
 			if (strcmp(entityType, "BARREL") == 0) // init Barrel
 			{
 				Barrels[barrel_cnt].id = i;
@@ -182,6 +240,18 @@ int main()
 					Barrels[barrel_cnt].x, Barrels[barrel_cnt].y, Barrels[barrel_cnt].value);
 
 				barrel_cnt++;
+			}
+
+			if (strcmp(entityType, "MINE") == 0) // init Mine
+			{
+				Mines[mine_cnt].id = i;
+				Mines[mine_cnt].x = x;
+				Mines[mine_cnt].y = y;
+
+				fprintf(stderr, "MINE %d: X=%d, Y=%d\n", i,
+					Mines[mine_cnt].x, Mines[mine_cnt].y);
+
+				mine_cnt++;
 			}
         }
 
