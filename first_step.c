@@ -32,6 +32,8 @@ typedef struct
 
 typedef enum
 {
+	FIRE,
+	MINE,
 	MOVE,
 	SLOWER,
 	WAIT
@@ -41,12 +43,14 @@ typedef struct
 {
 	int x;
 	int y;
-	Actions Act;
+	Actions action;
 } ACTION;
 
-
+////////////////////////
 BARREL Barrels[100];
-SHIP *Ships;
+SHIP My_Ships[3];
+SHIP En_Ships[3];
+
 
 //////////////////////////////////////////////////////////////////////////
 // MACROSES
@@ -54,24 +58,36 @@ SHIP *Ships;
 
 //////////////////////////////////////////////////////////////////////////
 // FUNCTIONS
-int Get_Action(SHIP *Ships, int ID, BARREL *Barrels, int Bar_Cnt)
+ACTION Get_Action(SHIP *Ships, int ID, BARREL *Barrels, int Bar_Cnt)
 {
-	int BAR_ID;
 	double Dist;
+	ACTION ACT;
 
-	BAR_ID = 0;
-	Dist = GET_DIST(Ships[ID].x, Ships[ID].y, Barrels[0].x, Barrels[0].y);
-
-	for (int i = 1;i < Bar_Cnt;i++)
+	if (Bar_Cnt > 0)
 	{
-		if (GET_DIST(Ships[ID].x, Ships[ID].y, Barrels[i].x, Barrels[i].y) < Dist)
+		ACT.action = MOVE;
+		ACT.x = Barrels[0].x;
+		ACT.y = Barrels[0].y;
+		Dist = GET_DIST(Ships[ID].x, Ships[ID].y, Barrels[0].x, Barrels[0].y);
+
+		for (int i = 0; i < Bar_Cnt; i++)
 		{
-			Dist = GET_DIST(Ships[ID].x, Ships[ID].y, Barrels[i].x, Barrels[i].y);
-			BAR_ID = i;
+			if (GET_DIST(Ships[ID].x, Ships[ID].y, Barrels[i].x, Barrels[i].y) < Dist)
+			{
+				Dist = GET_DIST(Ships[ID].x, Ships[ID].y, Barrels[i].x, Barrels[i].y);
+				ACT.x = Barrels[i].x;
+				ACT.y = Barrels[i].y;
+			}
 		}
+
+		
+	}
+	else
+	{
+		ACT.action = WAIT;
 	}
 
-	return BAR_ID;
+	return ACT;
 }
 
 
@@ -94,7 +110,9 @@ int main()
 	int en_ships_cnt = 0;
 	int barrel_cnt = 0;
 
-	Ships = (SHIP *)calloc(100, sizeof(SHIP)); // Max my ships == 1
+	ACTION New_Act;
+
+	//Ships = (SHIP *)calloc(100, sizeof(SHIP)); // Max my ships == 1
     // game loop
     while (1)
 	{
@@ -118,21 +136,38 @@ int main()
             int arg4;
             scanf("%d%s%d%d%d%d%d%d", &entityId, entityType, &x, &y, &arg1, &arg2, &arg3, &arg4);
 
-			if (strcmp(entityType, "SHIP") == 0) // init Ship
+			if (strcmp(entityType, "SHIP") == 0 && arg4 == 1) // init My_Ship
 			{
-				Ships[my_ships_cnt].id = i;
-				Ships[my_ships_cnt].x = x;
-				Ships[my_ships_cnt].y = y;
-				Ships[my_ships_cnt].dir = arg1;
-				Ships[my_ships_cnt].spd = arg2;
-				Ships[my_ships_cnt].rum = arg3;
-				Ships[my_ships_cnt].owner = arg4;
+				My_Ships[my_ships_cnt].id = i;
+				My_Ships[my_ships_cnt].x = x;
+				My_Ships[my_ships_cnt].y = y;
+				My_Ships[my_ships_cnt].dir = arg1;
+				My_Ships[my_ships_cnt].spd = arg2;
+				My_Ships[my_ships_cnt].rum = arg3;
+				My_Ships[my_ships_cnt].owner = arg4;
 
 				fprintf(stderr, "SHIP %d: X=%d, Y=%d, DIR=%d, SPD=%d, RUM=%d, OWN=%d\n", i,
-					Ships[my_ships_cnt].x, Ships[my_ships_cnt].y, Ships[my_ships_cnt].dir, 
-					Ships[my_ships_cnt].spd, Ships[my_ships_cnt].rum, Ships[my_ships_cnt].owner);
+					My_Ships[my_ships_cnt].x, My_Ships[my_ships_cnt].y, My_Ships[my_ships_cnt].dir,
+					My_Ships[my_ships_cnt].spd, My_Ships[my_ships_cnt].rum, My_Ships[my_ships_cnt].owner);
 
 				my_ships_cnt++;
+			}
+
+			if (strcmp(entityType, "SHIP") == 0 && arg4 == 0) // init En_Ship
+			{
+				En_Ships[en_ships_cnt].id = i;
+				En_Ships[en_ships_cnt].x = x;
+				En_Ships[en_ships_cnt].y = y;
+				En_Ships[en_ships_cnt].dir = arg1;
+				En_Ships[en_ships_cnt].spd = arg2;
+				En_Ships[en_ships_cnt].rum = arg3;
+				En_Ships[en_ships_cnt].owner = arg4;
+
+				fprintf(stderr, "SHIP %d: X=%d, Y=%d, DIR=%d, SPD=%d, RUM=%d, OWN=%d\n", i,
+					En_Ships[en_ships_cnt].x, En_Ships[en_ships_cnt].y, En_Ships[en_ships_cnt].dir,
+					En_Ships[en_ships_cnt].spd, En_Ships[en_ships_cnt].rum, En_Ships[en_ships_cnt].owner);
+
+				en_ships_cnt++;
 			}
 
 
@@ -156,13 +191,11 @@ int main()
             // To debug: fprintf(stderr, "Debug messages...\n");
 			// Any valid action, such as "WAIT" or "MOVE x y"		
 			
-			if (barrel_cnt > 0)
-			{
-				int Bar_ID;
 
-				Bar_ID = Get_Action(Ships, i, Barrels, barrel_cnt);
-				printf("MOVE %d %d\n", Barrels[Bar_ID].x, Barrels[Bar_ID].y); 
-			}
+			New_Act = Get_Action(My_Ships, My_Ships[i].id, Barrels, barrel_cnt);
+
+			if (New_Act.action == MOVE )	
+				printf("MOVE %d %d\n", New_Act.x, New_Act.y);
 			else  printf("WAIT\n");
 			 
         }
@@ -170,6 +203,6 @@ int main()
 		//free(Ships);
 		//free(Barrels);
     }
-
+	 
     return 0;
 }
