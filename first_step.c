@@ -50,11 +50,11 @@ typedef struct
 
 typedef enum
 {
-	FIRE,
-	MINE,
-	MOVE,
-	SLOWER,
-	WAIT
+	FIRE,		// 0
+	MINE,		// 1
+	MOVE,		// 2
+	SLOWER,		// 3
+	WAIT		// 4
 } Actions;
 
 typedef struct
@@ -129,7 +129,7 @@ int GET_SQRS_ID(int x, int y)
 	return -1;
 }
 //////////////////////////////////////////////////////////////////////////
-void VAL_SQRS(_MINE_ *Mines, int m_cnt, SHIP My_Ship, SHIP En_Ship)
+void VAL_SQRS(_MINE_ *Mines, int m_cnt, SHIP My_Ship, SHIP *En_Ships, int En_Cnt)
 {
 	int i,j;
 
@@ -147,7 +147,12 @@ void VAL_SQRS(_MINE_ *Mines, int m_cnt, SHIP My_Ship, SHIP En_Ship)
 		for (j = 0;j < N_SQR;j++)
 		{
 			if (IN_SQR(SQRS[j], My_Ship.x, My_Ship.y) == TRUE ) SQRS[j].valid = 0;
-			if (IN_SQR(SQRS[j], En_Ship.x, En_Ship.y) == TRUE) SQRS[j].valid = -2;
+		}
+
+	for (i = 0;i<En_Cnt;i++)
+		for (j = 0;j < N_SQR;j++)
+		{
+			if (IN_SQR(SQRS[j], En_Ships[i].x, En_Ships[i].y) == TRUE) SQRS[j].valid = -2;
 		}
 }
 
@@ -166,7 +171,7 @@ ACTION Get_Action(SHIP My_Ship, int My_Ship_Cnt, SHIP *En_Ships, int En_Cnt,  BA
 	for (int En_ID = 0; En_ID<En_Cnt; En_ID++)
 	if ( PREV_ACT[My_Ship_Cnt].action != FIRE 
 		 && (GET_DIST(My_Ship.x, My_Ship.y, En_Ships[En_ID].x, En_Ships[En_ID].y) < 8.0 && My_Ship.spd > 0)
-		 || (GET_DIST(My_Ship.x, My_Ship.y, En_Ships[En_ID].x, En_Ships[En_ID].y) < 2.0) )
+		 || (GET_DIST(My_Ship.x, My_Ship.y, En_Ships[En_ID].x, En_Ships[En_ID].y) < 2.5) )
 	{
 		ACT.action = FIRE;
 		ACT.x = En_Ships[En_ID].x;
@@ -345,10 +350,15 @@ int main()
             // Write an action using printf(). DON'T FORGET THE TRAILING \n
             // To debug: fprintf(stderr, "Debug messages...\n");
 			// Any valid action, such as "WAIT" or "MOVE x y"		
-			VAL_SQRS(Mines, mine_cnt, My_Ships[i], En_Ships[0]);
+			VAL_SQRS(Mines, mine_cnt, My_Ships[i], En_Ships, en_ships_cnt);
 
 			New_Act = Get_Action(My_Ships[i], i, En_Ships, en_ships_cnt, Barrels, barrel_cnt, TURN_ACTIONS);
 			TURN_ACTIONS[i] = New_Act;
+
+			if (New_Act.x < 0)	New_Act.x = 0;
+			if (New_Act.x > 22) New_Act.x = 22;
+			if (New_Act.y < 0)	New_Act.y = 0;
+			if (New_Act.y > 20) New_Act.y = 20;
 
 			if (New_Act.action == FIRE)
 				printf("FIRE %d %d\n", New_Act.x, New_Act.y);
