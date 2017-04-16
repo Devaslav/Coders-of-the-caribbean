@@ -117,6 +117,15 @@ char IN_SQR(SQUARE SQR, int x, int y)
 		return FALSE;
 }
 //////////////////////////////////////////////////////////////////////////
+int GET_SQRS_ID(int x, int y)
+{
+	int i;
+	for (i = 0;i < N_SQR;i++)
+		if (x >= SQRS[i].x1 && x <= SQRS[i].x2 && y >= SQRS[i].y1 && y <= SQRS[i].y2) return i;
+
+	return -1;
+}
+//////////////////////////////////////////////////////////////////////////
 void VAL_SQRS(_MINE_ *Mines, int m_cnt, SHIP My_Ship, SHIP En_Ship)
 {
 	int i,j;
@@ -160,7 +169,8 @@ ACTION Get_Action(SHIP *My_Ships, int ID, SHIP *En_Ships, int En_ID,  BARREL *Ba
 	int i;
 
 	//fprintf(stderr, "Bar_Cnt = %d\n", Bar_Cnt);
-	if (GET_DIST(My_Ships[ID].x, My_Ships[ID].y, En_Ships[En_ID].x, En_Ships[En_ID].y) < 4.0)
+	if ( (GET_DIST(My_Ships[ID].x, My_Ships[ID].y, En_Ships[En_ID].x, En_Ships[En_ID].y) < 5.0 && My_Ships[ID].spd > 0)
+		 || (GET_DIST(My_Ships[ID].x, My_Ships[ID].y, En_Ships[En_ID].x, En_Ships[En_ID].y) < 2.0) )
 	{
 		ACT.action = FIRE;
 		ACT.x = En_Ships[En_ID].x;
@@ -170,30 +180,26 @@ ACTION Get_Action(SHIP *My_Ships, int ID, SHIP *En_Ships, int En_ID,  BARREL *Ba
 	if (Bar_Cnt > 0)
 	{
 		ACT.action = MOVE;
-		ACT.x = Barrels[0].x;
-		ACT.y = Barrels[0].y;
-		Dist = GET_DIST(My_Ships[ID].x, My_Ships[ID].y, Barrels[0].x, Barrels[0].y);
+		Dist = 10000.0;
 
 		for (i = 0; i < Bar_Cnt; i++)
 		{
-			if (GET_DIST(My_Ships[ID].x, My_Ships[ID].y, Barrels[i].x, Barrels[i].y) < Dist)
+			if (GET_DIST(My_Ships[ID].x, My_Ships[ID].y, Barrels[i].x, Barrels[i].y) < Dist
+					&& SQRS[GET_SQRS_ID(Barrels[i].x, Barrels[i].y)].valid == 1)
 			{
 				Dist = GET_DIST(My_Ships[ID].x, My_Ships[ID].y, Barrels[i].x, Barrels[i].y);
 				ACT.x = Barrels[i].x;
 				ACT.y = Barrels[i].y;
 
-				fprintf(stderr, "TRG_BAR==%d\n", i);
+				//fprintf(stderr, "TRG_BAR==%d\n", i);
 			}
 		}
 	}
 	else
 	if(Bar_Cnt == 0)
 	{
-		fprintf(stderr, "Bar_Cnt = 000\n", Bar_Cnt);
+		//fprintf(stderr, "Bar_Cnt = 000\n", Bar_Cnt);
 		ACT.action = MOVE;
-		//ACT.x = SQRS[0].cx;
-		//ACT.y = SQRS[0].cy;
-		//Dist = GET_DIST(Ships[ID].x, Ships[ID].y, SQRS[0].cx, SQRS[0].cy);
 		Dist = 10000.0;
 		
 		for (i = 0; i < 110; i++)
@@ -201,13 +207,11 @@ ACTION Get_Action(SHIP *My_Ships, int ID, SHIP *En_Ships, int En_ID,  BARREL *Ba
 			if ( (GET_DIST(My_Ships[ID].x, My_Ships[ID].y, SQRS[i].cx, SQRS[i].cy) < Dist) 
 				&& SQRS[i].valid == 1 )
 			{
-				fprintf(stderr, "TRG_SQR==%d\n", i);
-
 				Dist = GET_DIST(My_Ships[ID].x, My_Ships[ID].y, SQRS[i].cx, SQRS[i].cy);
 				ACT.x = SQRS[i].cx;
 				ACT.y = SQRS[i].cy;
 
-				
+				//fprintf(stderr, "TRG_SQR==%d\n", i);
 			}
 		}
 		
