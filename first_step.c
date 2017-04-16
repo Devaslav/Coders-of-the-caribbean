@@ -177,7 +177,7 @@ ACTION Get_Action(SHIP *My_Ships, int ID, SHIP *En_Ships, int En_ID,  BARREL *Ba
 		ACT.y = En_Ships[En_ID].y; 
 	}
 	else
-	if (Bar_Cnt > 0)
+	if (Bar_Cnt > 0) 
 	{
 		ACT.action = MOVE;
 		Dist = 10000.0;
@@ -208,8 +208,8 @@ ACTION Get_Action(SHIP *My_Ships, int ID, SHIP *En_Ships, int En_ID,  BARREL *Ba
 				&& SQRS[i].valid == 1 )
 			{
 				Dist = GET_DIST(My_Ships[ID].x, My_Ships[ID].y, SQRS[i].cx, SQRS[i].cy);
-				ACT.x = SQRS[i].cx;
-				ACT.y = SQRS[i].cy;
+				ACT.x = (int )SQRS[i].cx;
+				ACT.y = (int )SQRS[i].cy;
 
 				//fprintf(stderr, "TRG_SQR==%d\n", i);
 			}
@@ -335,7 +335,8 @@ int main()
 			}
         }
 
-        for (int i = 0; i < myShipCount; i++) 
+        for (int i = 0; i < my_ships_cnt; i++)
+		//for (int j = 0; j < en_ships_cnt; j++) 
 		{
             // Write an action using printf(). DON'T FORGET THE TRAILING \n
             // To debug: fprintf(stderr, "Debug messages...\n");
