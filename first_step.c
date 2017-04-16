@@ -162,15 +162,15 @@ void VAL_SQRS(_MINE_ *Mines, int m_cnt, SHIP My_Ship, SHIP En_Ship)
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
-ACTION Get_Action(SHIP *My_Ships, int ID, SHIP *En_Ships, int En_ID,  BARREL *Barrels, int Bar_Cnt)
+ACTION Get_Action(SHIP My_Ship, SHIP *En_Ships, int En_ID,  BARREL *Barrels, int Bar_Cnt)
 {
 	double Dist;
 	ACTION ACT;
 	int i;
 
 	//fprintf(stderr, "Bar_Cnt = %d\n", Bar_Cnt);
-	if ( (GET_DIST(My_Ships[ID].x, My_Ships[ID].y, En_Ships[En_ID].x, En_Ships[En_ID].y) < 5.0 && My_Ships[ID].spd > 0)
-		 || (GET_DIST(My_Ships[ID].x, My_Ships[ID].y, En_Ships[En_ID].x, En_Ships[En_ID].y) < 2.0) )
+	if ( (GET_DIST(My_Ship.x, My_Ship.y, En_Ships[En_ID].x, En_Ships[En_ID].y) < 5.0 && My_Ship.spd > 0)
+		 || (GET_DIST(My_Ship.x, My_Ship.y, En_Ships[En_ID].x, En_Ships[En_ID].y) < 2.0) )
 	{
 		ACT.action = FIRE;
 		ACT.x = En_Ships[En_ID].x;
@@ -184,10 +184,10 @@ ACTION Get_Action(SHIP *My_Ships, int ID, SHIP *En_Ships, int En_ID,  BARREL *Ba
 
 		for (i = 0; i < Bar_Cnt; i++)
 		{
-			if (GET_DIST(My_Ships[ID].x, My_Ships[ID].y, Barrels[i].x, Barrels[i].y) < Dist
+			if (GET_DIST(My_Ship.x, My_Ship.y, Barrels[i].x, Barrels[i].y) < Dist
 					&& SQRS[GET_SQRS_ID(Barrels[i].x, Barrels[i].y)].valid == 1)
 			{
-				Dist = GET_DIST(My_Ships[ID].x, My_Ships[ID].y, Barrels[i].x, Barrels[i].y);
+				Dist = GET_DIST(My_Ship.x, My_Ship.y, Barrels[i].x, Barrels[i].y);
 				ACT.x = Barrels[i].x;
 				ACT.y = Barrels[i].y;
 
@@ -204,10 +204,10 @@ ACTION Get_Action(SHIP *My_Ships, int ID, SHIP *En_Ships, int En_ID,  BARREL *Ba
 		
 		for (i = 0; i < 110; i++)
 		{
-			if ( (GET_DIST(My_Ships[ID].x, My_Ships[ID].y, SQRS[i].cx, SQRS[i].cy) < Dist) 
+			if ( (GET_DIST(My_Ship.x, My_Ship.y, SQRS[i].cx, SQRS[i].cy) < Dist) 
 				&& SQRS[i].valid == 1 )
 			{
-				Dist = GET_DIST(My_Ships[ID].x, My_Ships[ID].y, SQRS[i].cx, SQRS[i].cy);
+				Dist = GET_DIST(My_Ship.x, My_Ship.y, SQRS[i].cx, SQRS[i].cy);
 				ACT.x = (int )SQRS[i].cx;
 				ACT.y = (int )SQRS[i].cy;
 
@@ -343,7 +343,7 @@ int main()
 			// Any valid action, such as "WAIT" or "MOVE x y"		
 			VAL_SQRS(Mines, mine_cnt, My_Ships[i], En_Ships[0]);
 
-			New_Act = Get_Action(My_Ships, My_Ships[i].id, En_Ships, 0, Barrels, barrel_cnt);
+			New_Act = Get_Action(My_Ships[i], En_Ships, 0, Barrels, barrel_cnt);
 
 			if (New_Act.action == FIRE)
 				printf("FIRE %d %d\n", New_Act.x, New_Act.y);
