@@ -9,8 +9,46 @@
 #include <memory.h>
 #include <math.h>
 
+/// HELPER
+///////////////////////////////////////////////////////////////////////////
+//convert even - r offset to cube
+//	x = col - (row + (row & 1)) / 2
+//	z = row
+//	y = -x - z
+
+//convert cube to even - r offset
+//col = x + (z + (z & 1)) / 2
+//row = z
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ///////////////////////////////////////////////////////////////////////////
 // VARS AND STRUCTS
+////////////////////////
+typedef struct
+{
+	int x;
+	int y;
+	int z;
+}Cube_Point;
+
+typedef struct
+{
+	int col;
+	int row;
+}Hex_Point;
+////////////////////////
 typedef struct 
 {
 	int id;
@@ -91,9 +129,43 @@ SQUARE SQRS[N_SQR];
 #define GET_DIST(X1, Y1, X2, Y2) ( sqrt((X1-X2)*(X1-X2)+(Y1-Y2)*(Y1-Y2)) ) 
 #define GET_TURNS(X) ( (1+(X) / 3.0) )
 
+#define max(a,b) (((a) > (b)) ? (a) : (b))
+#define min(a,b) (((a) < (b)) ? (a) : (b))
 //////////////////////////////////////////////////////////////////////////
 // FUNCTIONS
 //////////////////////////////////////////////////////////////////////////
+// Hex_Magic 
+Cube_Point Hex_to_Cube(Hex_Point Point)
+{
+	Cube_Point Cube;
+
+	Cube.x = Point.col - (Point.row + (Point.row & 1)) / 2;
+	Cube.z = Point.row;
+	Cube.y = -Cube.x - Cube.z;
+
+	return Cube;
+}
+
+Hex_Point Cube_to_Hex(Cube_Point Cube)
+{
+	Hex_Point Hex;
+
+	Hex.col = Cube.x + (Cube.z + (Cube.z & 1)) / 2;
+	Hex.row = Cube.z;
+}
+
+int Cube_Dist(Cube_Point a, Cube_Point b)
+{
+	return max(max(abs(a.x - b.x), abs(a.y - b.y)), abs(a.z - b.z));
+}
+
+/*
+int Cube_Dist1(Cube_Point a, Cube_Point b)
+{
+	return (abs(a.x - b.x) + abs(a.y - b.y) + abs(a.z - b.z)) / 2;
+}
+*/
+////////////////////////////////////////////////////////////////////////////
 void GET_SQRS(void)
 {
 	int i,j;
