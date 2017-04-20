@@ -111,6 +111,8 @@ Hex_Point HEXS[N_HEX_X][N_HEX_Y];
 #define GET_DIST(X1, Y1, X2, Y2) ( sqrt((X1-X2)*(X1-X2)+(Y1-Y2)*(Y1-Y2)) ) 
 #define GET_TURNS(X) ( round( 1+ X/3.0 ) )
 
+#define GET_VAL(X) (HEXS[X.col][X.row].val)
+
 #define max(a,b) (((a) > (b)) ? (a) : (b))
 #define min(a,b) (((a) < (b)) ? (a) : (b))
 //////////////////////////////////////////////////////////////////////////
@@ -195,11 +197,20 @@ void VAL_HEXS(_MINE_ *Mines, int m_cnt, CANNONBALL *Cores, int c_cnt, SHIP My_Sh
 	}
 
 	for (k = 0;k < m_cnt; k++)
-	for (j = 0;j < 21; j++)
-		for (i = 0;i < 23; i++)
-		{
-			if(Mines[k].hex.col == i && Mines[k].hex.row == j) HEXS[i][j].val = -1;
-		}
+		for (j = 0;j < 21; j++)
+			for (i = 0;i < 23; i++)
+			{
+				if (Mines[k].hex.col == i && Mines[k].hex.row == j) HEXS[i][j].val = -1;
+			}
+
+	for (k = 0;k < En_Cnt; k++)
+		for (j = 0;j < 21; j++)
+			for (i = 0;i < 23; i++)
+			{
+				if (En_Ships[k].hex[0].col == i && En_Ships[k].hex[0].row == j) HEXS[i][j].val = -2;
+				if (En_Ships[k].hex[1].col == i && En_Ships[k].hex[2].row == j) HEXS[i][j].val = -2;
+				if (En_Ships[k].hex[1].col == i && En_Ships[k].hex[2].row == j) HEXS[i][j].val = -2;
+			}
 
 	for (k = 0;k < c_cnt; k++)
 		for (j = 0;j < 21; j++)
@@ -218,7 +229,7 @@ Actions Get_Evasion(SHIP My_Ship)
 	T_Act = WAIT;
 
 	Temp_Hex[0] = My_Ship.hex[0];
-	Temp_Hex[1] = My_Ship.hex[2];
+	Temp_Hex[1] = My_Ship.hex[1];
 	Temp_Hex[2] = My_Ship.hex[2];
 
 	for (s = 0;s < My_Ship.spd;s++)
@@ -243,6 +254,7 @@ Actions Get_Evasion(SHIP My_Ship)
 	return T_Act;
 }
 
+///////////////////////////////////////////////////////////////////////
 ACTION Get_Move(SHIP My_Ship, Hex_Point HEX_POINT)
 {
 	ACTION ACT;
@@ -276,7 +288,20 @@ ACTION Get_Move(SHIP My_Ship, Hex_Point HEX_POINT)
 	fprintf(stderr, "N_X=%d |N_Y=%d || B_X=%d B_Y=%d || N_D=%d SPD=%d\n",
 		My_Ship.hex[1].col, My_Ship.hex[1].row, HEX_POINT.col, HEX_POINT.row, Need_Dir, My_Ship.spd);
 
-	if (Need_Dir == My_Ship.dir && Hex_Dist(My_Ship.hex[1], HEX_POINT) >=2)
+	if (GET_VAL(My_Ship.hex[1]) != 1)
+	{
+		if(My_Ship.spd < 2) ACT.action = FASTER;
+		if(My_Ship.spd == 2) ACT.action = SLOWER;
+	}
+	else if (GET_VAL(Shift_Hex(My_Ship.hex[1], My_Ship.dir, 0)) != 1 || GET_VAL(Shift_Hex(My_Ship.hex[1], My_Ship.dir, 1)) != 1)
+	{
+		if (My_Ship.spd > 0 && GET_VAL(Shift_Hex(My_Ship.hex[1], My_Ship.dir, 0)) != 1) ACT.action = SLOWER;
+		else 
+		if (My_Ship.spd > 0 && GET_VAL(Shift_Hex(My_Ship.hex[1], My_Ship.dir, 1)) != 1) ACT.action = FASTER;
+		else 
+		ACT.action = PORT; 
+	}
+	else if (Need_Dir == My_Ship.dir && Hex_Dist(My_Ship.hex[1], HEX_POINT) >=2)
 	{
 		if (My_Ship.spd < 2) ACT.action = FASTER; //GET_VAL(My_Ship.hex[1]);
 	}
@@ -319,49 +344,46 @@ ACTION Get_Action(SHIP My_Ship, int My_Ship_Cnt, SHIP *En_Ships, int En_Cnt,  BA
 	ACT.action = WAIT;
 	ACT.turn = 100;
 
-	/*
-	ACT.action = Get_Evasion(My_Ship);
-	fprintf(stderr, "ACT.action=%d!!!\n", ACT.action);
-	
+	ACT.action = WAIT;
+	ACT.turn = 100;
 
 	for (int En_ID = 0; En_ID<En_Cnt; En_ID++)
-	if( 
-		PREV_ACT[My_Ship_Cnt].action != FIRE && ( ACT.action == WAIT || (Hex_Dist(My_Ship.hex[0], En_Ships[En_ID].hex[1]) < Dist))
-		 && ((Hex_Dist(My_Ship.hex[0], En_Ships[En_ID].hex[1]) <= 10 && My_Ship.spd > 0)
-		 || (Hex_Dist(My_Ship.hex[0], En_Ships[En_ID].hex[1]) <= 3)) 
-	  )
-	{
-		Dist = (Hex_Dist(My_Ship.hex[0], En_Ships[En_ID].hex[1]));
-
-		Temp_Hex[1] = En_Ships[En_ID].hex[1];
-		Temp_Hex[0] = En_Ships[En_ID].hex[0];
-		Temp_Hex[2] = En_Ships[En_ID].hex[2];
-		for (i = 1; i <= 10; i++)
+		if (
+			PREV_ACT[My_Ship_Cnt].action != FIRE && ACT.action == WAIT
+			&& ((Hex_Dist(My_Ship.hex[0], En_Ships[En_ID].hex[1]) <= 10 && My_Ship.spd > 0)
+				|| (Hex_Dist(My_Ship.hex[0], En_Ships[En_ID].hex[1]) <= 3))
+			)
 		{
-			for (s = 0;s < En_Ships[En_ID].spd;s++)
+			Temp_Hex[1] = En_Ships[En_ID].hex[1];
+			//Temp_Hex[0] = En_Ships[En_ID].hex[0];
+			//Temp_Hex[2] = En_Ships[En_ID].hex[2];
+			for (i = 1; i <= 10; i++)
 			{
-				Temp_Hex[1] = Shift_Hex(Temp_Hex[1], En_Ships[En_ID].dir, 0);
-				Temp_Hex[0] = Shift_Hex(Temp_Hex[0], En_Ships[En_ID].dir, 0);
-				Temp_Hex[2] = Shift_Hex(Temp_Hex[2], En_Ships[En_ID].dir, 0);
-			}
+				for (s = 0;s < En_Ships[En_ID].spd;s++)
+				{
+					Temp_Hex[1] = Shift_Hex(Temp_Hex[1], En_Ships[En_ID].dir, 0);
+					//Temp_Hex[0] = Shift_Hex(Temp_Hex[0], En_Ships[En_ID].dir, 0);
+					//Temp_Hex[2] = Shift_Hex(Temp_Hex[2], En_Ships[En_ID].dir, 0);
+				}
+				//for (n = 0;n < 3;n++)
+				//{
+				Turns = GET_TURNS(Hex_Dist(My_Ship.hex[1], Temp_Hex[1]));
 
-			My_Hex[0] = My_Ship.hex[0];	My_Hex[1] = My_Ship.hex[1];	My_Hex[2] = My_Ship.hex[2];
-			FLAG = 0;
-			FLAG = (Temp_Hex[1].col == My_Hex[0].col && Temp_Hex[1].row == My_Hex[0].row)
-				|| (Temp_Hex[1].col == My_Hex[1].col && Temp_Hex[1].row == My_Hex[1].row)
-				|| (Temp_Hex[1].col == My_Hex[2].col && Temp_Hex[1].row == My_Hex[2].row);
+				My_Hex[0] = My_Ship.hex[0];	My_Hex[1] = My_Ship.hex[1];	My_Hex[2] = My_Ship.hex[2];
+				FLAG = 0;
+				FLAG = (Temp_Hex[1].col == My_Hex[0].col && Temp_Hex[1].row == My_Hex[0].row)
+					|| (Temp_Hex[1].col == My_Hex[1].col && Temp_Hex[1].row == My_Hex[1].row)
+					|| (Temp_Hex[1].col == My_Hex[2].col && Temp_Hex[1].row == My_Hex[2].row);
 
-			for (k = 0;k<Turns;k++)
-			{
-				My_Hex[0] = Shift_Hex(My_Hex[0], My_Ship.dir, 0);
-				My_Hex[1] = Shift_Hex(My_Hex[1], My_Ship.dir, 0);
-				My_Hex[2] = Shift_Hex(My_Hex[2], My_Ship.dir, 0);
-			}
+				for (k = 0;k<Turns;k++)
+				{
+					Shift_Hex(My_Hex[0], My_Ship.dir, 0);
+					Shift_Hex(My_Hex[1], My_Ship.dir, 0);
+					Shift_Hex(My_Hex[2], My_Ship.dir, 0);
+				}
 
-			for (n = 0;n < 3;n++)
-			{
-				Turns = GET_TURNS(Hex_Dist(My_Ship.hex[1], Temp_Hex[(n+1) % 3]));
-				if (Turns+1 == i && Turns < ACT.turn && FLAG == 0 && ACT.action != FIRE)
+
+				if (Turns + 1 == i && Turns < ACT.turn)
 				{
 					ACT.action = FIRE;
 					ACT.turn = Turns;
@@ -372,24 +394,23 @@ ACTION Get_Action(SHIP My_Ship, int My_Ship_Cnt, SHIP *En_Ships, int En_Cnt,  BA
 					fprintf(stderr, "FIRE : TRG=%d X=%d Y=%d TURNS=%d\n",
 						En_Ships[En_ID].id, ACT.hex.col, ACT.hex.row, Turns);
 				}
+				//}
+			}
+
+			if (ACT.action != FIRE)
+			{
+				ACT.action = FIRE;
+				ACT.turn = Turns;
+				ACT.hex.col = En_Ships[En_ID].hex[1].col;
+				ACT.hex.row = En_Ships[En_ID].hex[1].row;
+
+				fprintf(stderr, "FIRE : TRG=%d X=%d Y=%d TURNS=%d\n",
+					En_Ships[En_ID].id, ACT.hex.col, ACT.hex.row, Turns);
 			}
 		}
 
-		if (ACT.action != FIRE)
-		{
-			ACT.action = FIRE;
-			ACT.turn = Turns ;
-			ACT.hex.col = Temp_Hex[1].col;
-			ACT.hex.row = Temp_Hex[1].row;
 
-			fprintf(stderr, "FIRE : TRG=%d X=%d Y=%d TURNS=%d\n",
-				En_Ships[En_ID].id, ACT.hex.col, ACT.hex.row, Turns);
-		}
-	}
-	/////////
-	*/
-
-	if ( Bar_Cnt > 0 && (ACT.action == WAIT || My_Ship.rum < 50) )
+	if ( (Bar_Cnt > 0 && ACT.action == WAIT && My_Ship.rum < 50))
 	{
 		Dist = 100;
 		for (i = 0; i < Bar_Cnt; i++)
@@ -403,14 +424,11 @@ ACTION Get_Action(SHIP My_Ship, int My_Ship_Cnt, SHIP *En_Ships, int En_Cnt,  BA
 		
 		ACT = Get_Move(My_Ship, Barrels[BAR_ID].hex);
 	}
-	
 
-	if ((Bar_Cnt == 0 && ACT.action == WAIT))
-	
 	if (ACT.action == WAIT)
 	{
 		Dist = 100;
-		for (i = 0; i <En_Cnt; i++)
+		for (i = 0; i < En_Cnt; i++)
 		{
 			if (Hex_Dist(My_Ship.hex[1], En_Ships[i].hex[1]) < Dist)
 			{
@@ -421,7 +439,6 @@ ACTION Get_Action(SHIP My_Ship, int My_Ship_Cnt, SHIP *En_Ships, int En_Cnt,  BA
 
 		ACT = Get_Move(My_Ship, En_Ships[EN_ID].hex[1]);
 	}
-	
 
 	return ACT;
 }
