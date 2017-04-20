@@ -307,8 +307,8 @@ ACTION Get_Action(SHIP My_Ship, int My_Ship_Cnt, SHIP *En_Ships, int En_Cnt,  BA
 		}
 	}
 	
-	/*
-	if ( (Bar_Cnt > 0 && ACT.action == WAIT) )
+	
+	if ( Bar_Cnt > 0 && (ACT.action == WAIT || My_Ship.rum < 25) )
 	{
 		Dist = 100;
 		if(My_Ship.spd == 0) ACT.action = FASTER;
@@ -323,9 +323,13 @@ ACTION Get_Action(SHIP My_Ship, int My_Ship_Cnt, SHIP *En_Ships, int En_Cnt,  BA
 					BAR_ID = i;
 				}
 			}
+
+			ACT.action = MOVE;
+			ACT.hex.col = Barrels[BAR_ID].hex.col;
+			ACT.hex.row = Barrels[BAR_ID].hex.row;
 		}
 	}
-	*/
+	
 
 	//if ((Bar_Cnt == 0 && ACT.action == WAIT))
 	if (ACT.action == WAIT)
